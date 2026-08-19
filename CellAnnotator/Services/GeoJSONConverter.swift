@@ -27,7 +27,7 @@ enum GeoJSONConverter {
                 classification = Classification(name: cls.name, color: cls.color.rgb255)
             }
 
-            let props = Properties(name: nil,
+            let props = Properties(name: store.label(for: annotation),
                                    classification: classification,
                                    isLocked: false,
                                    measurements: [:])
@@ -72,7 +72,12 @@ enum GeoJSONConverter {
             if let classification = feature.properties.classification {
                 classID = resolveClass(classification, in: store)
             }
-            return Annotation(points: points, classID: classID, isClosed: true)
+            return Annotation(
+                points: points,
+                classID: classID,
+                isClosed: true,
+                displayNumber: displayNumber(from: feature.properties.name)
+            )
         }
     }
     
@@ -114,6 +119,15 @@ enum GeoJSONConverter {
         let cleaned = name.components(separatedBy: illegal).joined(separator: "_")
         let trimmed = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? "class" : trimmed
+    }
+
+    private static func displayNumber(from name: String?) -> Int {
+        guard let finalToken = name?
+            .split(whereSeparator: { $0.isWhitespace })
+            .last,
+              let number = Int(finalToken),
+              number > 0 else { return 0 }
+        return number
     }
 
     /// Finds a class by name, or creates it from the GeoJSON color if absent.
